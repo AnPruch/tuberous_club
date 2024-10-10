@@ -1,30 +1,53 @@
+"""
+Data collection from "Внеучебник" via tesseract
+"""
+# pylint: disable=too-many-branches,too-many-statements
 import json
-
 from pathlib import Path
 
 from PIL import Image
-from pytesseract.pytesseract import image_to_string
+from pytesseract import image_to_string
 
 
-def extract_data(path_to_save: Path, path_to_images: Path) -> None:
-    with open(path_to_save, 'w', encoding='utf-8') as f:
-        f.write('Внеучебник\n')
+def extract_data(save_path: Path, images_path: Path) -> None:
+    """
+    Data extraction with pytesseract.
 
-    for image_path in sorted(path_to_images.iterdir()):
+    Args:
+        save_path (pathlib.Path): Path to .txt file.
+        images_path (pathlib.Path): Path to the folder with images.
+
+    Returns:
+         None: Saving extracted data to .txt file.
+    """
+    with open(save_path, 'w', encoding='utf-8') as file:
+        file.write('Внеучебник\n')
+
+    for image_path in sorted(images_path.iterdir()):
         text = image_to_string(Image.open(image_path), lang='rus+eng')
 
-        with open(path_to_save, 'a', encoding='utf-8') as f:
-            f.write(f'\n{text}\n')
+        with open(save_path, 'a', encoding='utf-8') as file:
+            file.write(f'\n{text}\n')
 
 
-def block_data(extracted: str) -> list[tuple, ...]:
+def block_data(extracted: str) -> list[tuple]:
+    """
+    Blocking data in tuples.
+
+    Args:
+        extracted (str): Extracted string of data.
+
+    Returns:
+        list[tuple, ...]: List of clubs' information.
+    """
     blocks = extracted.split('\n\n')
     clear_blocks = []
     for index, block in enumerate(blocks[1:-4]):
         if not block or block == '\n' or block[0].isdigit()\
                 or "EVENT" in block:
             continue
-        elif '\n' in block and ('#' in block or '@' in block):
+
+        if '\n' in block and ('#' in block or '@' in block):
             block_lr = block.split('\n')
             if block_lr[0]:
                 clear_blocks.append(' '.join(block_lr[:-1]))
@@ -50,95 +73,115 @@ def block_data(extracted: str) -> list[tuple, ...]:
     return right
 
 
-def theme_data(clubs: list[tuple], themes: list) -> dict:
-    data = {theme: {} for theme in themes}
+def theme_data(unthemed_clubs: list[tuple], data_themes: tuple) -> dict[str, dict[str, str]]:
+    """
+    Dividing clubs into themes
+
+    Args:
+        clubs (list[tuple]): List of clubs' information.
+        data_themes (tuple): Themes of clubs.
+
+    Returns:
+        dict: Data dictionary.
+    """
+    themed_data = {theme: {} for theme in data_themes}
     i = -2
-    for index, club in enumerate(clubs):
-        if index > len(clubs) - 3:
+    for index, club in enumerate(unthemed_clubs):
+        if index > len(unthemed_clubs) - 3:
             _, contact, description = club
-            data[themes[i]] = [contact, description]
+            name = data_themes[i].upper()
+            theme = f'#{data_themes[i]}'
             i += 1
-            continue
-        name, contact, theme, description = club
+        else:
+            name, contact, theme, description = club
+
         if 'бизнес' in theme:
-            main_tag = themes[1]
+            main_tag = data_themes[1]
         elif 'мероприятий' in theme:
-            main_tag = themes[2]
+            main_tag = data_themes[2]
         elif 'nua' in theme:
-            main_tag = themes[3]
+            main_tag = data_themes[3]
         elif 'CCUA' in theme:
-            main_tag = themes[4]
+            main_tag = data_themes[4]
         else:
             main_tag = theme[1].upper() + theme[2:].replace('_', ' ')
 
-        data[main_tag][name] = [contact, description]
+        themed_data[main_tag][name] = [contact, description]
 
-    data[themes[-2]] = clubs[-2][1:]
-    data[themes[-1]] = clubs[-1][1:]
-
-    return data
+    return themed_data
 
 
-def manual_clearing(data: dict, themes: list) -> dict:
-    for theme, clubs in data.items():
+def manual_clearing(data: dict, themes: tuple) -> dict:
+    """
+    Clearing the data.
 
-        if isinstance(clubs, list):
-            data[theme][0] = clubs[0].replace("@", "vk.com/")
-            data[theme][1] = clubs[1].replace("УСТРОЙСТВ& образовател ьного",
+    Args:
+        data (dict): Data dictionary.
+        themes (tuple): Themes of clubs.
+
+    Returns:
+        dict: Data dictionary.
+    """
+    for theme, theme_clubs in data.items():
+
+        if isinstance(theme_clubs, list):
+            data[theme][0] = theme_clubs[0].replace("@", "vk.com/")
+            data[theme][1] = theme_clubs[1].replace("УСТРОЙСТВ& образовател ьного",
                                                   "устройства образовательного")
-            data[theme][1] = clubs[1].replace('СТУДСОВ&Т', 'Студсовет')
-            data[theme][1] = clubs[1].replace('By3a', 'вуза')
-            data[theme][1] = clubs[1].replace('иностранный студентам', "иностранным студентам")
-            data[theme][1] = clubs[1].replace(' И МНОГИМмИ ', " и многими ")
-            data[theme][1] = clubs[1].replace("ana", "для")
+            data[theme][1] = theme_clubs[1].replace('СТУДСОВ&Т', 'Студсовет')
+            data[theme][1] = theme_clubs[1].replace('By3a', 'вуза')
+            data[theme][1] = theme_clubs[1].replace('иностранный студентам',
+                                                    "иностранным студентам")
+            data[theme][1] = theme_clubs[1].replace(' И МНОГИМмИ ', " и многими ")
+            data[theme][1] = theme_clubs[1].replace("ana", "для")
             continue
 
-        for club_name, attr in clubs.items():
+        for club_name, attr in theme_clubs.items():
             if club_name == 'DELICE':
-                clubs[club_name][0] = '@delice_hse'
-                clubs[club_name][1] = attr[1].replace("нои", "но и")
+                theme_clubs[club_name][0] = '@delice_hse'
+                theme_clubs[club_name][1] = attr[1].replace("нои", "но и")
             if club_name == "HSE ART,":
-                clubs[club_name][0] = attr[0].replace('-', '_')
+                theme_clubs[club_name][0] = attr[0].replace('-', '_')
             if club_name == 'HSE MaBAND':
-                clubs[club_name][0] += ', t.me/mband_hse'
+                theme_clubs[club_name][0] += ', t.me/mband_hse'
             if attr[0] == '@vyshka tv':
-                clubs[club_name][0] = attr[0].replace(' ', '_')
-                clubs[club_name][1] = attr[1].replace('Т\\', 'TV')
+                theme_clubs[club_name][0] = attr[0].replace(' ', '_')
+                theme_clubs[club_name][1] = attr[1].replace('Т\\', 'TV')
             if "@novshesti" == attr[0]:
-                clubs[club_name][1] = attr[1].replace('Ana Tex', 'для тех')
-                clubs[club_name][1] = attr[1].replace('5 М М', "SMM")
-                clubs[club_name][1] = attr[1].replace("НоВ ШЭсти", 'НоВШЭсти')
-                clubs[club_name][1] = attr[1].replace('TOK', 'толк')
+                theme_clubs[club_name][1] = attr[1].replace('Ana Tex', 'для тех')
+                theme_clubs[club_name][1] = attr[1].replace('5 М М', "SMM")
+                theme_clubs[club_name][1] = attr[1].replace("НоВ ШЭсти", 'НоВШЭсти')
+                theme_clubs[club_name][1] = attr[1].replace('TOK', 'толк')
             if club_name == 'BOOKINEMA':
-                clubs[club_name][0] = "t.me/bookinema"
+                theme_clubs[club_name][0] = "t.me/bookinema"
 
             if " O " in attr[1]:
-                clubs[club_name][1] = attr[1].replace(' O ', 'о')
+                theme_clubs[club_name][1] = attr[1].replace(' O ', 'о')
             if 'реальны ми' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('реальны ми', 'реальными')
+                theme_clubs[club_name][1] = attr[1].replace('реальны ми', 'реальными')
             if ' х ' in attr[1] or ' _ ' in attr[1]:
-                clubs[club_name][1] = attr[1].replace(' х ', ' ')
-                clubs[club_name][1] = attr[1].replace(' _ ', ' ')
+                theme_clubs[club_name][1] = attr[1].replace(' х ', ' ')
+                theme_clubs[club_name][1] = attr[1].replace(' _ ', ' ')
             if 'HUY' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('HUY', "НИУ")
+                theme_clubs[club_name][1] = attr[1].replace('HUY', "НИУ")
             if '--' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('--', '—')
+                theme_clubs[club_name][1] = attr[1].replace('--', '—')
             if '-—' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('-—', '—')
+                theme_clubs[club_name][1] = attr[1].replace('-—', '—')
             if ' No ' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('No', 'по')
+                theme_clubs[club_name][1] = attr[1].replace('No', 'по')
             if " He " in attr[1]:
-                clubs[club_name][1] = attr[1].replace('He', "не")
+                theme_clubs[club_name][1] = attr[1].replace('He', "не")
             if 'Ha' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('Ha', 'на')
+                theme_clubs[club_name][1] = attr[1].replace('Ha', 'на')
             if 'Woy' in attr[1]:
-                clubs[club_name][1] = attr[1].replace('Woy', 'шоу')
+                theme_clubs[club_name][1] = attr[1].replace('Woy', 'шоу')
             if 'BUAAT' in attr[1]:
-                clubs[club_name][1] = attr[1].replace("BUAAT", 'видят')
+                theme_clubs[club_name][1] = attr[1].replace("BUAAT", 'видят')
             if "видеосотчёты" in attr[1]:
-                clubs[club_name][1] = attr[1].replace('видеосотчёты', 'видеоотчёты')
+                theme_clubs[club_name][1] = attr[1].replace('видеосотчёты', 'видеоотчёты')
 
-            clubs[club_name][0] = attr[0].replace("@", "vk.com/")
+            theme_clubs[club_name][0] = attr[0].replace("@", "vk.com/")
 
     data[themes[0]]['HSE MUSIC BAND'] = data[themes[0]].pop('HSE МаBAND')
     data[themes[0]]['HSE DANCING CREW'] = data[themes[0]].pop('HSE DANCINGGREW')
@@ -146,7 +189,8 @@ def manual_clearing(data: dict, themes: list) -> dict:
     data[themes[0]]['АЛЬБИОН'] = data[themes[0]].pop("ANBBHOH")
     data[themes[1]].pop('HSE ASPE®@')
     data[themes[1]]['Law Club | Юридический клуб'.upper()] = data[themes[1]].pop("LAW €LdB")
-    data[themes[1]]['КЛУБ ИНТЕЛЛЕКТУАЛЬНЫХ ИГР'] = data[themes[1]].pop("_ KAYB ИНТЕЛЛЕ- uroveaer nora И ТУАЛЬНЫХ ИГР")
+    data[themes[1]]['КЛУБ ИНТЕЛЛЕКТУАЛЬНЫХ ИГР'] = data[themes[1]].\
+        pop("_ KAYB ИНТЕЛЛЕ- uroveaer nora И ТУАЛЬНЫХ ИГР")
     data[themes[1]]['Бизнес Клуб ВШЭ'.upper()] = data[themes[1]].pop("BaSINES®GhLdB")
     data[themes[1]]['HSE Finance Club (Finclub)'.upper()] = data[themes[1]].pop("FIN@LGB HSE")
     data[themes[2]]['HSE EVENT'] = data[themes[2]].pop("HSE БУсЫ")
@@ -167,25 +211,26 @@ def manual_clearing(data: dict, themes: list) -> dict:
 if __name__ == "__main__":
     path_to_save = Path(__file__).parent / 'vneuchebnik.txt'
     path_to_images = Path(__file__).parent / 'vneuchebnik'
-    extract_data(path_to_save, path_to_images)
+    # extract_data(path_to_save, path_to_images)
 
     clear_path = Path(__file__).parent / 'clear_data.json'
 
-    themes = ["Творческое начало", "Бизнес и эрудиция", "Организация мероприятий", "СМИ и медиа",
-              "Большая социальная миссия", "Спорт и увлечения", "Студенческий совет", "Волонтёрский центр"]
+    club_themes = ("Творческое начало", "Бизнес и эрудиция", "Организация мероприятий",
+              "СМИ и медиа", "Большая социальная миссия", "Спорт и увлечения",
+              "Студенческий совет", "Волонтёрский центр")
 
     with open(path_to_save, 'r', encoding='utf-8') as f:
         data_str = f.read()
     clubs = block_data(data_str)
-    data = theme_data(clubs, themes)
+    result_data = theme_data(clubs, club_themes)
 
     with open(clear_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+        json.dump(result_data, f, ensure_ascii=False, indent=4)
 
     with open(clear_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+        result_data = json.load(f)
 
-    data = manual_clearing(data, themes)
+    result_data = manual_clearing(result_data, club_themes)
 
     with open(clear_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+        json.dump(result_data, f, ensure_ascii=False, indent=4)
