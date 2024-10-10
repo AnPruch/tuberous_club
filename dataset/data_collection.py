@@ -211,7 +211,7 @@ def manual_clearing(data: dict, themes: tuple) -> dict:
 if __name__ == "__main__":
     path_to_save = Path(__file__).parent / 'vneuchebnik.txt'
     path_to_images = Path(__file__).parent / 'vneuchebnik'
-    # extract_data(path_to_save, path_to_images)
+    extract_data(path_to_save, path_to_images)
 
     clear_path = Path(__file__).parent / 'clear_data.json'
 

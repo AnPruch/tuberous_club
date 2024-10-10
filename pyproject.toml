@@ -81,6 +81,7 @@ module = [
     'pydantic',
     'torch.*',
     'transformers',
+    'pytesseract'
 ]
 ignore_missing_imports = true
 
