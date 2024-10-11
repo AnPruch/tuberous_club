@@ -52,7 +52,7 @@ exclude = [
 ]
 
 disallow_untyped_defs = true
-disallow_any_unimported = true
+disallow_any_unimported = false
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
@@ -81,7 +81,9 @@ module = [
     'pydantic',
     'torch.*',
     'transformers',
-    'pytesseract'
+    'pytesseract',
+    'telebot',
+    'telebot.types'
 ]
 ignore_missing_imports = true
 

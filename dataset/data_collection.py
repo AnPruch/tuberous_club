@@ -142,7 +142,7 @@ def manual_clearing(data: dict, themes: tuple) -> dict:
                 theme_clubs[club_name][1] = attr[1].replace("нои", "но и")
             if club_name == "HSE ART,":
                 theme_clubs[club_name][0] = attr[0].replace('-', '_')
-            if club_name == 'HSE MaBAND':
+            if club_name == 'HSE МаBAND':
                 theme_clubs[club_name][0] += ', t.me/mband_hse'
             if attr[0] == '@vyshka tv':
                 theme_clubs[club_name][0] = attr[0].replace(' ', '_')
