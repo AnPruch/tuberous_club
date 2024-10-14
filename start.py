@@ -1,6 +1,7 @@
 """
 Chatbot starter
 """
+import telebot
 import json
 
 import telebot
@@ -14,8 +15,7 @@ with open ('dataset/questions.json', encoding='utf-8', errors='ignore') as q:
 
 bot = telebot.TeleBot("7754776786:AAFXPPZpJr7_GmUY_fB6aH-4sro05JKXmYE", parse_mode=None)
 subjects = list(i for i in data.keys())
-not_bye = 'Надеюсь, что смог помочь тебе и информация была полезной. До новых встреч :) \n Если захочешь снова начать со мной общение, нажми на /start'
-
+not_bye = 'Надеюсь, что смог помочь тебе и информация была полезной! \nА если тебя ничего не заинтересовало, может, ты хочешь создать свой собственный клуб? В таком случае можно обратиться к **Шмелёву Степану Викторовичу** - главе внеучебной деятельности НИУ ВШЭ \n https://vk.com/id307399746 \n\nДо новых встреч :) \n\n Если захочешь снова начать со мной общение, нажми на /start'
 
 #Button_handler
 @bot.callback_query_handler(func=lambda call: True)
@@ -23,7 +23,7 @@ def callback_query_handler(call):
     if call.data == "yes":
         ask_about_subject(call.message)
     elif call.data == "no":
-        bot.send_message(call.message.chat.id, "К сожалению, если тебе не интересна внеучебная деятельность, сейчас ничем не могу помочь. Надеюсь, что буду полезным в будущем :) \n Но если ты всё же передумаешь и захочешь начать снова, нажми на /start")
+        bot.send_message(call.message.chat.id, "Мне жаль, что тебе не интересна внеучебная деятельность. \n\nНо если ты всё же передумаешь и захочешь начать снова, нажми на /start \n\nНадеюсь, что буду полезным в будущем :)")
     elif call.data in ['0', '1', '2', '3', '4', '5']:
         subject_index = int(call.data)
         markup, message = get_clubs(subject_index)
@@ -55,13 +55,13 @@ def callback_query_handler(call):
         markup.add(telebot.types.InlineKeyboardButton('Волонтёрский центр', callback_data='volunteer_center'))
         bot.send_message(call.message.chat.id, f"Отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n", reply_markup=markup)
     elif call.data == 'None':
-        bot.send_message(call.message.chat.id, not_bye)
+        bot.send_message(call.message.chat.id, not_bye,  parse_mode='Markdown')
     elif call.data == 'stud_consule':
         club_info = data['Студенческий совет']
-        bot.send_message(call.message.chat.id, club_info)
+        bot.send_message(call.message.chat.id, f'Студенческий совет \n\n{club_info[1]}\n \n \n Подробнее о клубе можешь узнать здесь: \n{club_info[0]}')
     elif call.data == 'Волонтёрский центр':
         club_info = data['volunteer_center']
-        bot.send_message(call.message.chat.id, club_info)
+        bot.send_message(call.message.chat.id, f'Волонтёрский центр \n\n{club_info[1]}\n \n \n Подробнее о клубе можешь узнать здесь: \n{club_info[0]}')
     elif call.data == "additional_info":
         bot.send_message(call.message.chat.id, additional_questions)
 
@@ -129,7 +129,7 @@ def get_clubs(subject_index):
 def get_club_info(club_name, subject_index):
     subject = data[subjects[subject_index]]
     club_info = subject[club_name]
-    return f"{club_name}: {club_info[1]}\n \n \n Подробнее о клубе можешь узнать здесь: \n{club_info[0]}"
+    return f"{club_name} \n\n{club_info[1]}\n \n \n Подробнее о клубе можешь узнать здесь: \n{club_info[0]}"
 
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
