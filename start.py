@@ -11,9 +11,10 @@ with open('dataset/clear_data.json', encoding='utf-8', errors='ignore') as f:
     data = json.load(f)
 
 with open ('dataset/questions.json', encoding='utf-8', errors='ignore') as q:
-    additional_questions = json.load(q)
+    questions = json.load(q)
+    additional_questions = '\n\n'.join(list((f'<b>{k}</b>\n    — {v}' for k, v in questions.items())))
 
-bot = telebot.TeleBot("7754776786:AAFXPPZpJr7_GmUY_fB6aH-4sro05JKXmYE", parse_mode=None)
+bot = telebot.TeleBot("7604474051:AAErnNbDz427QWCrT4IBl039aCebdZx17fM", parse_mode=None) # save the token
 subjects = list(i for i in data.keys())
 not_bye = 'Надеюсь, что смог помочь тебе и информация была полезной! \nА если тебя ничего не заинтересовало, может, ты хочешь создать свой собственный клуб? В таком случае можно обратиться к **Шмелёву Степану Викторовичу** - главе внеучебной деятельности НИУ ВШЭ \n https://vk.com/id307399746 \n\nДо новых встреч :) \n\n Если захочешь снова начать со мной общение, нажми на /start'
 
@@ -49,11 +50,11 @@ def callback_query_handler(call):
     elif call.data == '6':
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton('Студенческий совет', callback_data='stud_consule'))
-        bot.send_message(call.message.chat.id, f"Отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n", reply_markup=markup)
+        bot.send_message(call.message.chat.id, f"Студенческий совет - отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n", reply_markup=markup)
     elif call.data == '7':
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton('Волонтёрский центр', callback_data='volunteer_center'))
-        bot.send_message(call.message.chat.id, f"Отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n", reply_markup=markup)
+        bot.send_message(call.message.chat.id, f"Волонтёрский центр- отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n", reply_markup=markup)
     elif call.data == 'None':
         bot.send_message(call.message.chat.id, not_bye,  parse_mode='Markdown')
     elif call.data == 'stud_consule':
@@ -63,7 +64,7 @@ def callback_query_handler(call):
         club_info = data['volunteer_center']
         bot.send_message(call.message.chat.id, f'Волонтёрский центр \n\n{club_info[1]}\n \n \n Подробнее о клубе можешь узнать здесь: \n{club_info[0]}')
     elif call.data == "additional_info":
-        bot.send_message(call.message.chat.id, additional_questions)
+        bot.send_message(call.message.chat.id, additional_questions, parse_mode='HTML')
 
 #1 BLOCK
 @bot.message_handler(commands=['start', 'help'])
@@ -87,7 +88,7 @@ def ask_about_add_activities(message):
 
 #3 BLOCK
 def ask_about_subject(message):
-    text = "Исходя из твоих интересов, могу посоветовать тебе следующие направления:"
+    text = "В Нижегородской вышке есть следующие направления внеучебной деятельности:"
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(telebot.types.InlineKeyboardButton('Творческое начало', callback_data='0'))
     markup.add(telebot.types.InlineKeyboardButton('Бизнес и эрудиция', callback_data='1'))
@@ -110,8 +111,6 @@ def ask_about_subject(message):
     additional_markup.add(additional_info_button, nothing_interested_button)
     bot.send_message(message.chat.id, additional_message, reply_markup=additional_markup)
 
-
-
 #4 BLOCK
 def get_clubs(subject_index):
     subject = data[subjects[subject_index]]
@@ -123,7 +122,7 @@ def get_clubs(subject_index):
         button = telebot.types.InlineKeyboardButton(club, callback_data=club)
         buttons.append(button)
     markup.add(*buttons)
-    return markup, f"Отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n"
+    return markup, f"{subjects[subject_index]} - отличный выбор! \n Ты можешь узнать подробную информацию о клубе, нажав на одну из кнопок ниже \n"
 
 #5 BLOCK
 def get_club_info(club_name, subject_index):
@@ -133,7 +132,10 @@ def get_club_info(club_name, subject_index):
 
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
-  bot.send_message(message.chat.id,'Извини, не могу ответить на твое сообщение, воспользуйся кнопками')
-
+    text_markup = 'Извини, не могу ответить на твое сообщение\nВозможно, ты найдешь интересующую информацию ниже по кнопке?'
+    add_text_markup = telebot.types.InlineKeyboardMarkup()
+    text_message = telebot.types.InlineKeyboardButton("Дополнительная информация", callback_data="additional_info")
+    add_text_markup.add(text_message)
+    bot.send_message(message.chat.id, text_markup, reply_markup=add_text_markup)
 
 bot.polling() # for a while
