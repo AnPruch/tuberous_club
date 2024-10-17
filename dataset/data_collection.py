@@ -199,12 +199,19 @@ def manual_clearing(data: dict, themes: tuple) -> dict:
     data[themes[4]]["СПО «БЛИЗКИЕ ЛЮДИ»"] = data[themes[4]].pop("CHO «БЛИЗКИЕ,ЛЮДИ»")
     data[themes[4]].pop("ЗЕЛЕНАЯBbIWK A")
     data[themes[4]].pop("FEM@LaEB HSE")
+    data[themes[4]]["СЕСТРЫ"] = ["t.me/sistershse", "Клуб «Сестры» организован для женской аудитории. "
+                                                    "Участницы собираются для обсуждения насущных проблем,"
+                                                    " с которыми девушки могут столкнуться в любом возрасте. "
+                                                    "Сюда относят романтическую любовь, брак, male gaze,"
+                                                    " неуверенность в себе, перестроение своей личности "
+                                                    "под запросы общества, психологическое и сексуальное насилие. "
+                                                    "В клубе делятся своим опытом, разбирать статьи и книги,"
+                                                    " фильмы и объекты массовой культуры."]
     data[themes[5]]["ФУТБОЛЬНЫЙ СОЮЗ"] = data[themes[5]].pop("ФУТБОЛЬНЫЙСОЮЗ")
     data[themes[5]]["ШАХМАТНЫЙ КЛУБ"] = data[themes[5]].pop("ШАХМАТНЫЙKAYB")
     data[themes[5]]['OVERCON HSE'] = data[themes[5]].pop('OVERGONHoe')
     data[themes[5]].pop(" CAOPTHBHbIA KAYB")
     data[themes[0]]['BOOKINEMA'] = data[themes[5]].pop('BOOKINEMA')
-
     return data
 
 
