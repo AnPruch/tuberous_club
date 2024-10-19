@@ -37,12 +37,7 @@ order_by_type = true
 remove_redundant_aliases = true
 group_by_package = true
 force_alphabetical_sort_within_sections = true
-src_paths = [
-    "core_utils",
-    "config",
-    "lab_1_classify_by_unigrams",
-    "lab_2_retrieval_w_bm25"
-]
+
 
 [tool.mypy]
 python_version = '3.11'
@@ -63,8 +58,7 @@ warn_unused_ignores = false
 disable_error_code = [
     'var-annotated',
     'union-attr',
-
-    # needed for seminars, to this moment not fixed: https://github.com/python/mypy/issues/9440
+    'import',
     'attr-defined'
 ]
 
@@ -172,7 +166,7 @@ persistent = true
 
 # Minimum Python version to use for version dependent checks. Will default to the
 # version used to run pylint.
-py-version = "3.10"
+py-version = "3.11"
 
 # Discover python modules and packages in the file system subtree.
 # recursive =
@@ -459,7 +453,7 @@ confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFIN
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable = ["raw-checker-failed", "bad-inline-option", "locally-disabled", "file-ignored", "suppressed-message", "useless-suppression", "deprecated-pragma", "use-symbolic-message-instead", "use-implicit-booleaness-not-comparison-to-string", "use-implicit-booleaness-not-comparison-to-zero"]
+disable = ["raw-checker-failed", "bad-inline-option", "locally-disabled", "file-ignored", "suppressed-message", "useless-suppression", "deprecated-pragma", "use-symbolic-message-instead", "use-implicit-booleaness-not-comparison-to-string", "use-implicit-booleaness-not-comparison-to-zero", "too-few-public-methods"]
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
