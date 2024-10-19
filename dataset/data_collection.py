@@ -85,7 +85,7 @@ def theme_data(unthemed_clubs: list[tuple], data_themes: tuple) -> dict[str, dic
         dict: Data dictionary.
     """
     themed_data = {theme: {} for theme in data_themes}
-    i = -2
+    i = -3
     for index, club in enumerate(unthemed_clubs):
         if index > len(unthemed_clubs) - 3:
             _, contact, description = club
@@ -123,7 +123,6 @@ def manual_clearing(data: dict, themes: tuple) -> dict:
         dict: Data dictionary.
     """
     for theme, theme_clubs in data.items():
-
         if isinstance(theme_clubs, list):
             data[theme][0] = theme_clubs[0].replace("@", "vk.com/")
             data[theme][1] = theme_clubs[1].replace("УСТРОЙСТВ& образовател ьного",
@@ -197,35 +196,47 @@ def manual_clearing(data: dict, themes: tuple) -> dict:
     data[themes[3]]['HSE LIVE'] = data[themes[3]].pop("НО lVE")
     data[themes[3]]['ВЫШКАTV'] = data[themes[3]].pop("ВЫШКАТМУ")
     data[themes[4]]["СПО «БЛИЗКИЕ ЛЮДИ»"] = data[themes[4]].pop("CHO «БЛИЗКИЕ,ЛЮДИ»")
-    data[themes[4]].pop("ЗЕЛЕНАЯBbIWK A")
+    data[themes[4]]["ЗЕЛЁНАЯ ВЫШКА"] = data[themes[4]].pop("ЗЕЛЕНАЯBbIWK A")
     data[themes[4]].pop("FEM@LaEB HSE")
     data[themes[4]]["СЕСТРЫ"] = ["t.me/sistershse",
                                  "Клуб «Сестры» организован для женской аудитории. "
-                                "Участницы собираются для обсуждения насущных проблем,"
-                                " с которыми девушки могут столкнуться в любом возрасте. "
-                                "Сюда относят романтическую любовь, брак, male gaze,"
-                                " неуверенность в себе, перестроение своей личности "
-                                "под запросы общества, психологическое и сексуальное насилие. "
-                                "В клубе делятся своим опытом, разбирать статьи и книги,"
-                                " фильмы и объекты массовой культуры."]
+                                 "Участницы собираются для обсуждения насущных проблем,"
+                                 " с которыми девушки могут столкнуться в любом возрасте. "
+                                 "Сюда относят романтическую любовь, брак, male gaze,"
+                                 " неуверенность в себе, перестроение своей личности "
+                                 "под запросы общества, психологическое и сексуальное насилие. "
+                                 "В клубе делятся своим опытом, разбирать статьи и книги,"
+                                 " фильмы и объекты массовой культуры."]
     data[themes[5]]["ФУТБОЛЬНЫЙ СОЮЗ"] = data[themes[5]].pop("ФУТБОЛЬНЫЙСОЮЗ")
     data[themes[5]]["ШАХМАТНЫЙ КЛУБ"] = data[themes[5]].pop("ШАХМАТНЫЙKAYB")
     data[themes[5]]['OVERCON HSE'] = data[themes[5]].pop('OVERGONHoe')
     data[themes[5]].pop(" CAOPTHBHbIA KAYB")
     data[themes[0]]['BOOKINEMA'] = data[themes[5]].pop('BOOKINEMA')
+    data[themes[8]]['BlaBlaClub'] = ['t.me/hse_speakingclub',
+                                     'BlaBlaClub - это клуб, участники которого каждую неделю '
+                                     'в комфортной и доброжелательной атмосфере развивают навык'
+                                     'и разговорного английского языка, обсуждают интересные '
+                                     'для каждого студента темы, знакомятся и находят новых '
+                                     'друзей. К ним часто приходят ребята-иностранцы, которые '
+                                     'делятся частичкой своей культуры и узнают больше о русской. '
+                                     'Помимо классического формата встреч, они также организуют '
+                                     'прогулки по городу, бранчи, кинопросмотры и пикники. '
+                                     'В телеграм-канале разговорного клуба вы можете найти более '
+                                     'подробную информацию, а также фотографии, которые отражают '
+                                     'тепло наших встреч!']
     return data
 
 
 if __name__ == "__main__":
     path_to_save = Path(__file__).parent / 'vneuchebnik.txt'
     path_to_images = Path(__file__).parent / 'vneuchebnik'
-    extract_data(path_to_save, path_to_images)
+    # extract_data(path_to_save, path_to_images)
 
     clear_path = Path(__file__).parent / 'clear_data.json'
 
     club_themes = ("Творческое начало", "Бизнес и эрудиция", "Организация мероприятий",
-              "СМИ и медиа", "Большая социальная миссия", "Спорт и увлечения",
-              "Студенческий совет", "Волонтёрский центр")
+                   "СМИ и медиа", "Большая социальная миссия", "Спорт и увлечения",
+                   "Студенческий совет", "Волонтёрский центр", "Разговорные клубы")
 
     with open(path_to_save, 'r', encoding='utf-8') as f:
         data_str = f.read()
