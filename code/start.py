@@ -3,8 +3,8 @@ Creating chatbot via Telegram API
 """
 import telebot
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from tuberous_club.code.data_loader import DataLoader
-from tuberous_club.code.token_data import Token
+from data_loader import DataLoader
+from token_data import Token
 
 
 class Club:
@@ -41,6 +41,8 @@ class ClubBot:
     def __init__(self, token: str) -> None:
         self.bot = telebot.TeleBot(token, parse_mode=None)
         self.subjects = []
+        self.last_msg = 'Надеюсь, что смог помочь тебе и информация была полезной! \nА если тебя ничего не заинтересовало, может, ты хочешь создать свой собственный клуб? В таком случае можно обратиться к **Шмелёву Степану Викторовичу** - главе внеучебной деятельности НИУ ВШЭ \n https://vk.com/id307399746 \n\nДо новых встреч :) \n\n Если захочешь снова начать со мной общение, нажми на /start'
+
         self.load_data()
         self.setup_handlers()
 
@@ -78,6 +80,8 @@ class ClubBot:
                 self.bot.send_message(call.message.chat.id, club_info)
             elif call.data == 'additional_info':
                 self.bot.send_message(call.message.chat.id, self.additional_questions, parse_mode='HTML')
+            elif call.data == 'None':
+                self.bot.send_message(call.message.chat.id, self.last_msg, parse_mode='Markdown')
         
         @self.bot.message_handler(commands=['start', 'help'])
         def send_welcome(message: Message) -> None:
@@ -97,7 +101,7 @@ class ClubBot:
         no_button = InlineKeyboardButton("Нет(", callback_data="no")
         markup.add(yes_button, no_button)
         self.bot.send_message(message.chat.id, text, reply_markup=markup)
-
+        
     def ask_about_subject(self, message: Message) -> None:
         text = "В Нижегородской вышке есть следующие направления внеучебной деятельности:"
         markup = InlineKeyboardMarkup()
@@ -105,6 +109,20 @@ class ClubBot:
             markup.add(InlineKeyboardButton(subject.name, callback_data=str(index)))
 
         self.bot.send_message(message.chat.id, text, reply_markup=markup)
+        sent_msg = "Ну как? Есть что-то интересное именно для тебя? Нажми на кнопку выше и выбери направление, чтобы узнать, какие клубы туда входят"
+        self.bot.send_message(message.chat.id, sent_msg)
+        self.ask_about_additional_info(message)
+
+    def ask_about_additional_info(self, message: Message) -> None:
+        additional_message = "Если тебя ничего не заинтересовало, или ты хочешь узнать дополнительную информацию, нажми на кнопку ниже"
+        additional_markup = telebot.types.InlineKeyboardMarkup()
+
+        additional_info_button = telebot.types.InlineKeyboardButton("Дополнительная информация", callback_data="additional_info")
+        nothing_interested_button = telebot.types.InlineKeyboardButton("Ничего не заинтересовало", callback_data='None')
+
+        additional_markup.add(additional_info_button, nothing_interested_button)
+        self.bot.send_message(message.chat.id, additional_message, reply_markup=additional_markup)
+
 
     def start_polling(self) -> None:
         self.bot.polling()
