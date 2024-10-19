@@ -2,28 +2,27 @@
 Creating chatbot via Telegram API
 """
 import telebot
-from token_data import Token
-from data_loader import DataLoader
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from tuberous_club.code.data_loader import DataLoader
+from tuberous_club.code.token_data import Token
 
-
-token = Token().get_token()
 
 class Club:
-    def __init__(self, name, info):
+    def __init__(self, name: str, info:str) -> None:
         self.name = name
         self.info = info
 
-    def get_info(self):
-        return f"{self.name} \n\n{self.info[1]}\n \n \n Подробнее о клубе можешь узнать здесь: \n{self.info[0]}"
+    def get_info(self) -> str:
+        return f"{self.name} \n\n{self.info[1]}\n \n \n " \
+               f"Подробнее о клубе можешь узнать здесь: \n{self.info[0]}"
 
 
 class Subject:
-    def __init__(self, name, clubs):
+    def __init__(self, name: str, clubs: list) -> None:
         self.name = name
         self.clubs = clubs
 
-    def get_club_buttons(self):
+    def get_club_buttons(self) -> InlineKeyboardMarkup:
         markup = InlineKeyboardMarkup()
         row = [] 
         for club in self.clubs:
@@ -39,13 +38,13 @@ class Subject:
 
 
 class ClubBot:
-    def __init__(self, token):
+    def __init__(self, token: str) -> None:
         self.bot = telebot.TeleBot(token, parse_mode=None)
         self.subjects = []
         self.load_data()
         self.setup_handlers()
 
-    def load_data(self):
+    def load_data(self) -> None:
         data_loader = DataLoader('dataset/clear_data.json', 'dataset/questions.json')
         data, self.additional_questions = data_loader.load_data()
         
@@ -53,9 +52,9 @@ class ClubBot:
             clubs = [Club(name, info) for name, info in clubs_info.items()]
             self.subjects.append(Subject(subject_name, clubs))
 
-    def setup_handlers(self):
+    def setup_handlers(self) -> None:
         @self.bot.callback_query_handler(func=lambda call: True)
-        def callback_query_handler(call: CallbackQuery):
+        def callback_query_handler(call: CallbackQuery) -> None:
             if call.data == "yes":
                 self.ask_about_subject(call.message)
             elif call.data == "no":
@@ -74,13 +73,14 @@ class ClubBot:
                                     reply_markup=club_buttons)
             elif call.data.startswith('club_'):
                 club_name = call.data.replace('club_', '')
-                club_info = next(club.get_info() for subject in self.subjects for club in subject.clubs if club.name == club_name)
+                club_info = next(club.get_info() for subject in self.subjects
+                                 for club in subject.clubs if club.name == club_name)
                 self.bot.send_message(call.message.chat.id, club_info)
             elif call.data == 'additional_info':
                 self.bot.send_message(call.message.chat.id, self.additional_questions, parse_mode='HTML')
         
         @self.bot.message_handler(commands=['start', 'help'])
-        def send_welcome(message: Message):
+        def send_welcome(message: Message) -> None:
             text = '''Привет, меня зовут КЛУБень!
 Я бот студентов ФиПЛа, который поможет тебе разобраться во внеучебной деятельности Нижегородской Вышки.
 
@@ -106,10 +106,12 @@ class ClubBot:
 
         self.bot.send_message(message.chat.id, text, reply_markup=markup)
 
-    def start_polling(self):
+    def start_polling(self) -> None:
         self.bot.polling()
 
 
 if __name__ == "__main__":
+    token = Token().get_token()
+
     club_bot = ClubBot(token)
     club_bot.start_polling()
