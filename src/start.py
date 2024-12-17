@@ -327,5 +327,5 @@ class ClubBot:
 if __name__ == "__main__":
     token = Token().get_token()
 
-    club_bot = ClubBot(token, '12345678')
+    club_bot = ClubBot(token)
     club_bot.start_polling()
