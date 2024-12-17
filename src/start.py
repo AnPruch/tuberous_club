@@ -1,12 +1,11 @@
 """
 Creating chatbot via Telegram API
 """
-from pathlib import Path
-
 import telebot
 from data_loader import DataLoader
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from token_data import TOKEN
+from token_data import Token
+import psycopg2
 
 
 class Club:
@@ -32,9 +31,9 @@ class Club:
                f"Подробнее о клубе можешь узнать здесь: \n{self.info[0]}"
 
 
-class Subject:
+class Category:
     """
-    Club subject class
+    Club category class
     """
     def __init__(self, name: str, clubs: list) -> None:
         """
@@ -63,7 +62,37 @@ class Subject:
             markup.add(*row)
 
         return markup
+class Database:
+    def __init__(self, db_name, user, password, host, port):
+        self.connection = psycopg2.connect(
+            dbname=db_name,
+            user=user,
+            password=password,
+            host=host,
+            port=port
+        )
+        self.cursor = self.connection.cursor()
 
+    def get_categories(self):
+        self.cursor.execute("SELECT * FROM categories")
+        return self.cursor.fetchall()
+
+    def get_clubs_by_category(self, category_id):
+        self.cursor.execute("SELECT name, link, description FROM clubs WHERE category_id = %s", (category_id,))
+        return self.cursor.fetchall()
+
+    def load_data(self):
+        categories_data = self.get_categories()
+        categories = []
+        for category_id, category_name in categories_data:
+            clubs_info = self.get_clubs_by_category(category_id)
+            clubs = [Club(name, (link, description)) for name, link, description in clubs_info]
+            categories.append(Category(category_name, clubs))
+        return categories
+
+    def close(self):
+        self.cursor.close()
+        self.connection.close()
 
 class ClubBot:
     """
@@ -77,30 +106,22 @@ class ClubBot:
             token (str): token string
         """
         self.bot = telebot.TeleBot(token, parse_mode=None)
-        self.subjects = []
+        self.categories = []
         self.last_msg = 'Надеюсь, что смог помочь тебе и информация была полезной! \n' \
                         'А если тебя ничего не заинтересовало, может, ты хочешь создать' \
                         ' свой собственный клуб? В таком случае можно обратиться к ' \
                         '**Шмелёву Степану Викторовичу** - главе внеучебной деятельности ' \
                         'НИУ ВШЭ \n https://vk.com/id307399746 \n\nДо новых встреч :) \n' \
                         '\n Если захочешь снова начать со мной общение, нажми на /start'
-        self.load_data()
+        self.additional_questions = {}
+        self.database = Database(db_name='tuberous_club', user='postgres', password='****', host='localhost', port='5432')
+        self.categories = self.database.load_data()
+        self.load_add_questions()
         self.setup_handlers()
-        self.additional_question = {}
 
-    def load_data(self) -> None:
-        """
-        Load data
-        """
-        data_loader = DataLoader(
-            str(Path(__file__).parent.parent / 'dataset/clear_data.json'),
-            str(Path(__file__).parent.parent / 'dataset/questions.json')
-        )
-        data, self.additional_questions = data_loader.load_data()
-
-        for subject_name, clubs_info in data.items():
-            clubs = [Club(name, info) for name, info in clubs_info.items()]
-            self.subjects.append(Subject(subject_name, clubs))
+    def load_add_questions(self) -> None:
+        data_loader = DataLoader('dataset/questions.json')
+        self.additional_questions = data_loader.load_questions()
 
     def setup_handlers(self) -> None:
         """
@@ -115,7 +136,7 @@ class ClubBot:
                 call (CallbackQuery): callback query
             """
             if call.data == "yes":
-                self.ask_about_subject(call.message)
+                self.ask_about_category(call.message)
             elif call.data == "no":
                 self.bot.send_message(call.message.chat.id,
                                       "Мне жаль, что тебе не интересна "
@@ -124,18 +145,18 @@ class ClubBot:
                                         "начать снова, нажми на /start \n\n"
                                         "Надеюсь, что буду полезным в будущем :)")
             elif call.data.isdigit():
-                subject_index = int(call.data)
-                subject = self.subjects[subject_index]
-                club_buttons = subject.get_club_buttons()
+                category_index = int(call.data)
+                category = self.categories[category_index]
+                club_buttons = category.get_club_buttons()
                 self.bot.send_message(call.message.chat.id,
-                                      f"{subject.name} - отличный выбор! \n"
+                                      f"{category.name} - отличный выбор! \n"
                                         "Ты можешь узнать подробную информацию о клубах, "
                                         "нажав на одну из кнопок ниже:",
                                       reply_markup=club_buttons)
             elif call.data.startswith('club_'):
                 club_name = call.data.replace('club_', '')
-                club_info = next(club.get_info() for subject in self.subjects
-                                 for club in subject.clubs if club.name == club_name)
+                club_info = next(club.get_info() for category in self.categories
+                                 for club in category.clubs if club.name == club_name)
                 self.bot.send_message(call.message.chat.id, club_info)
             elif call.data == 'additional_info':
                 self.bot.send_message(call.message.chat.id,
@@ -179,23 +200,12 @@ class ClubBot:
             self.bot.reply_to(message, text)
 
         @self.bot.message_handler(content_types=['text'])
-        def handle_text(message: Message) -> None:
-            """
-            Handle text input
-            Args:
-                message (Message): message of bot
-            """
-            text_markup = 'Извини, не могу ответить на твое сообщение\n' \
-                          'Возможно, ты найдешь интересующую информацию' \
-                          ' ниже по кнопке?'
-            add_text_markup = InlineKeyboardMarkup()
-            text_message = InlineKeyboardButton(
-                "Дополнительная информация",
-                callback_data="additional_info"
-            )
+        def handle_text(message):
+            text_markup = 'Извини, не могу ответить на твое сообщение\nВозможно, ты найдешь интересующую информацию ниже по кнопке?'
+            add_text_markup = telebot.types.InlineKeyboardMarkup()
+            text_message = telebot.types.InlineKeyboardButton("Дополнительная информация", callback_data="additional_info")
             add_text_markup.add(text_message)
-            self.bot.send_message(message.chat.id, text_markup,
-                                  reply_markup=add_text_markup)
+            self.bot.send_message(message.chat.id, text_markup, reply_markup=add_text_markup)
 
     def ask_about_add_activities(self, message: Message) -> None:
         """
@@ -211,17 +221,17 @@ class ClubBot:
         markup.add(yes_button, no_button)
         self.bot.send_message(message.chat.id, text, reply_markup=markup)
 
-    def ask_about_subject(self, message: Message) -> None:
+    def ask_about_category(self, message: Message) -> None:
         """
-        Ask about subject
+        Ask about category
 
         Args:
             message (Message): message of bot
         """
         text = "В Нижегородской вышке есть следующие направления внеучебной деятельности:"
         markup = InlineKeyboardMarkup()
-        for index, subject in enumerate(self.subjects):
-            markup.add(InlineKeyboardButton(subject.name, callback_data=str(index)))
+        for index, category in enumerate(self.categories):
+            markup.add(InlineKeyboardButton(category.name, callback_data=str(index)))
 
         self.bot.send_message(message.chat.id, text, reply_markup=markup)
         sent_msg = "Ну как? Есть что-то интересное именно для тебя? " \
@@ -257,5 +267,7 @@ class ClubBot:
 
 
 if __name__ == "__main__":
-    club_bot = ClubBot(TOKEN)
+    token = Token().get_token()
+
+    club_bot = ClubBot(token)
     club_bot.start_polling()
