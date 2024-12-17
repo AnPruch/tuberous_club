@@ -11,7 +11,7 @@ class Token:
         """
         Initialization
         """
-        self.token = ''  # input your token string
+        self.token = '7604474051:AAErnNbDz427QWCrT4IBl039aCebdZx17fM'  # input your token string
         self.name = 'hsetuberous_bot'
 
     def get_token(self) -> str:

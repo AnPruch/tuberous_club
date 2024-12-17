@@ -1,19 +1,22 @@
 """
 Creating chatbot via Telegram API
 """
-import telebot
-from data_loader import DataLoader
-from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from token_data import Token
 import os
+from typing import Any
+
 import psycopg2
+import telebot
+from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+
+from data_loader import DataLoader
+from token_data import Token
 
 
 class Club:
     """
     Club class
     """
-    def __init__(self, name: str, info: str) -> None:
+    def __init__(self, name: str, info: tuple[str, str]) -> None:
         """
         Bot initialization
 
@@ -63,8 +66,24 @@ class Category:
             markup.add(*row)
 
         return markup
+
+
 class Database:
-    def __init__(self, db_name, user, password, host, port):
+    """
+    Database Class.
+    """
+    def __init__(self, db_name: str, user: str, password: str,
+                 host: str, port: str) -> None:
+        """
+        Initialization of Database class.
+
+        Args:
+            db_name (str): Database name
+            user (str): Username
+            password (str): Database password
+            host (str): Database host
+            port (str): Database port
+        """
         self.connection = psycopg2.connect(
             dbname=db_name,
             user=user,
@@ -74,15 +93,36 @@ class Database:
         )
         self.cursor = self.connection.cursor()
 
-    def get_categories(self):
+    def get_categories(self) -> list | Any:
+        """
+        Get list of categories.
+
+        Returns:
+            list: Club categories
+        """
         self.cursor.execute("SELECT * FROM categories")
         return self.cursor.fetchall()
 
-    def get_clubs_by_category(self, category_id):
-        self.cursor.execute("SELECT name, link, description FROM clubs WHERE category_id = %s", (category_id,))
+    def get_clubs_by_category(self, category_id: int) -> list | Any:
+        """
+        Get clubs by category.
+
+        Args:
+            category_id (int): ID of category
+        Returns:
+            list: Clubs
+        """
+        self.cursor.execute("SELECT name, link, description FROM clubs WHERE category_id = %s",
+                            (category_id,))
         return self.cursor.fetchall()
 
-    def load_data(self):
+    def load_data(self) -> list:
+        """
+        Load database info.
+
+        Returns:
+            list: Club categories
+        """
         categories_data = self.get_categories()
         categories = []
         for category_id, category_name in categories_data:
@@ -91,22 +131,28 @@ class Database:
             categories.append(Category(category_name, clubs))
         return categories
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Close cursor and database.
+        """
         self.cursor.close()
         self.connection.close()
+
 
 class ClubBot:
     """
     Bot class
     """
-    def __init__(self, token: str) -> None:
+    def __init__(self, bot_token: str,
+                 database_password: str = '***') -> None:
         """
-        Bot initialization
+        Bot initialization.
 
         Args:
-            token (str): token string
+            bot_token (str): Token string
+            database_password (str): Password
         """
-        self.bot = telebot.TeleBot(token, parse_mode=None)
+        self.bot = telebot.TeleBot(bot_token, parse_mode=None)
         self.categories = []
         self.last_msg = 'Надеюсь, что смог помочь тебе и информация была полезной! \n' \
                         'А если тебя ничего не заинтересовало, может, ты хочешь создать' \
@@ -116,14 +162,20 @@ class ClubBot:
                         '\n Если захочешь снова начать со мной общение, нажми на /start'
         self.additional_questions = {}
         if os.environ.get('ENV') == 'production':
-            self.database = Database(db_name='railway', user='postgres', password='****', host='autorack.proxy.rlwy.net', port='20181')
+            self.database = Database(db_name='railway', user='postgres', password=database_password,
+                                     host='autorack.proxy.rlwy.net', port='20181')
         else:
-            self.database = Database(db_name='tuberous_club', user='postgres', password='****', host='localhost', port='5432')
+            self.database = Database(db_name='tuberous_club', user='postgres',
+                                     password=database_password, host='localhost',
+                                     port='5432')
         self.categories = self.database.load_data()
         self.load_add_questions()
         self.setup_handlers()
 
     def load_add_questions(self) -> None:
+        """
+        Load additional questions from database.
+        """
         data_loader = DataLoader('dataset/questions.json')
         self.additional_questions = data_loader.load_questions()
 
@@ -204,10 +256,12 @@ class ClubBot:
             self.bot.reply_to(message, text)
 
         @self.bot.message_handler(content_types=['text'])
-        def handle_text(message):
-            text_markup = 'Извини, не могу ответить на твое сообщение\nВозможно, ты найдешь интересующую информацию ниже по кнопке?'
+        def handle_text(message: Message) -> None:
+            text_markup = 'Извини, не могу ответить на твое сообщение\n' \
+                          'Возможно, ты найдешь интересующую информацию ниже по кнопке?'
             add_text_markup = telebot.types.InlineKeyboardMarkup()
-            text_message = telebot.types.InlineKeyboardButton("Дополнительная информация", callback_data="additional_info")
+            text_message = telebot.types.InlineKeyboardButton("Дополнительная информация",
+                                                              callback_data="additional_info")
             add_text_markup.add(text_message)
             self.bot.send_message(message.chat.id, text_markup, reply_markup=add_text_markup)
 
@@ -273,5 +327,5 @@ class ClubBot:
 if __name__ == "__main__":
     token = Token().get_token()
 
-    club_bot = ClubBot(token)
+    club_bot = ClubBot(token, '12345678')
     club_bot.start_polling()
