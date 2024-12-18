@@ -91,7 +91,7 @@ class Database:
         Returns:
             list: Club categories
         """
-        self.cursor.execute("SELECT * FROM categories")
+        self.cursor.execute("SELECT * FROM category")
         return self.cursor.fetchall()
 
     def get_clubs_by_category(self, category_id: int) -> list | Any:
