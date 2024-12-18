@@ -63,8 +63,8 @@ class Database:
     """
     Database Class.
     """
-    def __init__(self, db_name: str, user: str, password: str,
-                 host: str, port: str) -> None:
+    def __init__(self, db_name: str, user: str, host: str,
+                 port: str, password: str = "***") -> None:
         """
         Initialization of Database class.
 

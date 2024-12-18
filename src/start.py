@@ -17,14 +17,15 @@ class ClubBot:
     Bot class
     """
     def __init__(self, bot_token: str,
-                 database: Database,
+                 bot_database: Database,
                  questions_path: Path | str = '') -> None:
         """
         Bot initialization.
 
         Args:
             bot_token (str): Token string
-            database_password (str): Password
+            bot_database (Database): Database
+            questions_path (Path|str): JSON file path
         """
         self.bot = telebot.TeleBot(bot_token, parse_mode=None)
         self.categories = []
@@ -34,7 +35,7 @@ class ClubBot:
                         '**Шмелёву Степану Викторовичу** - главе внеучебной деятельности ' \
                         'НИУ ВШЭ \n https://vk.com/id307399746 \n\nДо новых встреч :) \n' \
                         '\n Если захочешь снова начать со мной общение, нажми на /start'
-        self.database = database
+        self.database = bot_database
         self.categories = self.database.load_data()
 
         self.dataloader = DataLoader(questions_path)
@@ -210,14 +211,13 @@ class ClubBot:
 
 if __name__ == "__main__":
     if os.environ.get('ENV') == 'production':
-        database = Database(db_name='railway', user='postgres', password=None,
-                                    host='autorack.proxy.rlwy.net', port='20181')
+        database = Database(db_name='railway', user='postgres',
+                            host='autorack.proxy.rlwy.net', port='20181')
     else:
         database = Database(db_name='tuberous_club', user='postgres',
-                                    password=None, host='localhost',
-                                    port='5432')
+                            host='localhost', port='5432')
+
     club_bot = ClubBot(TOKEN, database,
                        questions_path=Path(__file__).parent.parent
                                       / 'dataset' / 'questions.json')
-    
     club_bot.start_polling()
