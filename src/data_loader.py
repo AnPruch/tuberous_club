@@ -19,7 +19,7 @@ class DataLoader:
         self.questions_path = questions_path
         self.additional_questions = ""
 
-    def check_path(self) -> None:
+    def __check_path(self) -> None:
         """
         Check path to JSON file.
         """
@@ -39,7 +39,7 @@ class DataLoader:
         Returns:
             str: Information about other questions
         """
-        self.check_path()
+        self.__check_path()
 
         with open(str(self.questions_path), encoding='utf-8') as q:
             questions = json.load(q)

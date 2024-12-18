@@ -4,7 +4,6 @@ Database structure classes.
 from typing import Any
 
 import psycopg2
-from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 class Club:
@@ -13,14 +12,22 @@ class Club:
     """
     def __init__(self, name: str, info: tuple[str, str]) -> None:
         """
-        Bot initialization.
+        Club instance initialization.
 
         Args:
-            name (str): name
-            info (str): info
+            name (str): Name
+            info (str): Info
         """
         self.name = name
         self.info = info
+
+        self.__check_args()
+
+    def __check_args(self) -> None:
+        if not isinstance(self.name, str) or not isinstance(self.info, tuple) or \
+                len(self.info) != 2 or not isinstance(self.info[0], str) \
+                or not isinstance(self.info[1], str):
+            raise TypeError
 
     def get_info(self) -> str:
         """
@@ -36,31 +43,20 @@ class Category:
     """
     def __init__(self, name: str, clubs: list) -> None:
         """
-        Bot initialization
+        Category instance initialization.
 
         Args:
-            name (str): name
-            clubs (list): club list
+            name (str): Name
+            clubs (list): Club list
         """
         self.name = name
         self.clubs = clubs
 
-    def get_club_buttons(self) -> InlineKeyboardMarkup:
-        """
-        Get club buttons
-        """
-        markup = InlineKeyboardMarkup()
-        row = []
-        for club in self.clubs:
-            row.append(InlineKeyboardButton(club.name, callback_data=f'club_{club.name}'))
+        self.__check_args()
 
-            if len(row) == 2:
-                markup.add(*row)
-                row = []
-        if row:
-            markup.add(*row)
-
-        return markup
+    def __check_args(self) -> None:
+        if not isinstance(self.name, str) or not isinstance(self.clubs, list):
+            raise TypeError
 
 
 class Database:

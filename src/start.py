@@ -7,7 +7,7 @@ from pathlib import Path
 import telebot
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from src.clubs_database import Database
+from src.clubs_database import Category, Database
 from src.data_loader import DataLoader
 from src.token_data import TOKEN
 
@@ -77,7 +77,7 @@ class ClubBot:
             elif call.data.isdigit():
                 category_index = int(call.data)
                 category = self.categories[category_index]
-                club_buttons = category.get_club_buttons()
+                club_buttons = self.buttons_for_category(category)
                 self.bot.send_message(call.message.chat.id,
                                       f"{category.name} - отличный выбор! \n"
                                         "Ты можешь узнать подробную информацию о клубах, "
@@ -190,6 +190,24 @@ class ClubBot:
         additional_markup.add(additional_info_button, nothing_interested_button)
         self.bot.send_message(message.chat.id, additional_message,
                               reply_markup=additional_markup)
+
+    @staticmethod
+    def buttons_for_category(category: Category) -> InlineKeyboardMarkup:
+        """
+        Create buttons for category
+        """
+        markup = InlineKeyboardMarkup()
+        row = []
+        for club in category.clubs:
+            row.append(InlineKeyboardButton(club.name, callback_data=f'club_{club.name}'))
+
+            if len(row) == 2:
+                markup.add(*row)
+                row = []
+        if row:
+            markup.add(*row)
+
+        return markup
 
     def start_polling(self) -> None:
         """
