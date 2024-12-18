@@ -51,7 +51,7 @@ class DataLoaderTest(unittest.TestCase):
         bad_path_inputs = ['', 'src', 'questions.txt', 'unknown.json']
 
         for bad_input in bad_inputs:
-            loader = DataLoader(bad_input)
+            loader = DataLoader(bad_input)  # type: ignore
             self.assertRaises(TypeError, loader.load_questions)
 
         for bad_input in bad_path_inputs:

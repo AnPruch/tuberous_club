@@ -64,17 +64,9 @@ disable_error_code = [
 
 [[tool.mypy.overrides]]
 module = [
-    'ast_comments',
-    'datasets',
-    'evaluate',
     'fastapi',
     'ghapi.all',
-    'matplotlib',
-    'matplotlib.pyplot',
-    'memory_profiler',
     'pydantic',
-    'torch.*',
-    'transformers',
     'pytesseract',
     'telebot',
     'telebot.types'
