@@ -2,6 +2,7 @@
 DataLoader Tests.
 """
 import unittest
+from pathlib import Path
 
 from src.data_loader import DataLoader
 
@@ -14,7 +15,7 @@ class DataLoaderTest(unittest.TestCase):
         """
         Setup method.
         """
-        self.loader_path = 'loader_test_example.json'
+        self.loader_path = Path(__file__).parent / 'loader_test_example.json'
         self.loader = DataLoader(self.loader_path)
 
     def test_fields(self) -> None:
