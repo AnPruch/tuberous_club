@@ -1,4 +1,8 @@
+"""
+DataLoader Tests.
+"""
 import unittest
+
 from src.data_loader import DataLoader
 
 
@@ -13,24 +17,43 @@ class DataLoaderTest(unittest.TestCase):
         self.loader_path = 'loader_test_example.json'
         self.loader = DataLoader(self.loader_path)
 
-    def test_fields(self):
+    def test_fields(self) -> None:
+        """
+        Test DataLoader instance fields.
+        """
         self.assertEqual(self.loader.questions_path, self.loader_path)
 
         self.assertIsInstance(self.loader.additional_questions, str)
 
         self.assertEqual(self.loader.additional_questions, '')
 
-    def test_load_questions_return_value(self):
+    def test_load_questions_return_value(self) -> None:
+        """
+        Check return value.
+        """
         self.loader.load_questions()
 
         self.assertIsInstance(self.loader.additional_questions, str)
 
+    def test_load_questions_ideal(self) -> None:
+        """
+        Ideal scenario.
+        """
+        self.loader.load_questions()
         expected = "<b>Вопрос</b>\n\t— Ответ\n\n<b>Question</b>\n\t— Answer"
         self.assertEqual(expected, self.loader.additional_questions)
 
-    def test_load_questions_bad_input(self):
-        bad_inputs = [[], '', 'src', 6, 'questions.txt', 'unknown.json']
+    def test_load_questions_bad_input(self) -> None:
+        """
+        Bad input scenario.
+        """
+        bad_inputs = [[], 6]
+        bad_path_inputs = ['', 'src', 'questions.txt', 'unknown.json']
 
-        for input in bad_inputs:
-            loader = DataLoader(input)
+        for bad_input in bad_inputs:
+            loader = DataLoader(bad_input)
+            self.assertRaises(TypeError, loader.load_questions)
+
+        for bad_input in bad_path_inputs:
+            loader = DataLoader(bad_input)
             self.assertRaises(FileNotFoundError, loader.load_questions)

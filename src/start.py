@@ -2,14 +2,15 @@
 Creating chatbot via Telegram API
 """
 import os
+from pathlib import Path
 from typing import Any
 
 import psycopg2
 import telebot
 from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from data_loader import DataLoader
-from token_data import Token
+from src.data_loader import DataLoader
+from src.token_data import Token
 
 
 class Club:
@@ -144,7 +145,8 @@ class ClubBot:
     Bot class
     """
     def __init__(self, bot_token: str,
-                 database_password: str = '***') -> None:
+                 database_password: str = '***',
+                 questions_path: Path | str = '') -> None:
         """
         Bot initialization.
 
@@ -160,7 +162,7 @@ class ClubBot:
                         '**Шмелёву Степану Викторовичу** - главе внеучебной деятельности ' \
                         'НИУ ВШЭ \n https://vk.com/id307399746 \n\nДо новых встреч :) \n' \
                         '\n Если захочешь снова начать со мной общение, нажми на /start'
-        self.additional_questions = {}
+
         if os.environ.get('ENV') == 'production':
             self.database = Database(db_name='railway', user='postgres', password=database_password,
                                      host='autorack.proxy.rlwy.net', port='20181')
@@ -168,16 +170,16 @@ class ClubBot:
             self.database = Database(db_name='tuberous_club', user='postgres',
                                      password=database_password, host='localhost',
                                      port='5432')
-        self.categories = self.database.load_data()
-        self.load_add_questions()
-        self.setup_handlers()
 
-    def load_add_questions(self) -> None:
-        """
-        Load additional questions from database.
-        """
-        data_loader = DataLoader('dataset/questions.json')
-        self.additional_questions = data_loader.load_questions()
+        self.categories = self.database.load_data()
+
+        self.dataloader = DataLoader(questions_path)
+        self.additional_questions = ''
+        if self.dataloader.questions_path:
+            self.dataloader.load_questions()
+            self.additional_questions = self.dataloader.additional_questions
+
+        self.setup_handlers()
 
     def setup_handlers(self) -> None:
         """
@@ -327,5 +329,7 @@ class ClubBot:
 if __name__ == "__main__":
     token = Token().get_token()
 
-    club_bot = ClubBot(token)
+    club_bot = ClubBot(token,
+                       questions_path=Path(__file__).parent.parent
+                                      / 'dataset' / 'questions.json')
     club_bot.start_polling()

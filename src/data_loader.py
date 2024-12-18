@@ -9,7 +9,7 @@ class DataLoader:
     """
     DataLoader for additional questions from JSON file.
     """
-    def __init__(self, questions_path: str) -> None:
+    def __init__(self, questions_path: str | Path) -> None:
         """
         Initialization of DataLoader.
 
@@ -20,12 +20,19 @@ class DataLoader:
         self.additional_questions = ""
 
     def check_path(self) -> None:
-        if not isinstance(self.questions_path, str) \
-                or not Path(self.questions_path).is_file()\
-                or Path(self.questions_path).suffix != '.json':
+        """
+        Check path to JSON file.
+        """
+        if not isinstance(self.questions_path, (str, Path)):
+            raise TypeError
+
+        if isinstance(self.questions_path, str):
+            self.questions_path = Path(self.questions_path)
+
+        if not self.questions_path.exists() or self.questions_path.suffix != '.json':
             raise FileNotFoundError
 
-    def load_questions(self) -> str:
+    def load_questions(self) -> None:
         """
         Load questions.
 
@@ -34,9 +41,8 @@ class DataLoader:
         """
         self.check_path()
 
-        with open(self.questions_path, encoding='utf-8', errors='ignore') as q:
+        with open(str(self.questions_path), encoding='utf-8') as q:
             questions = json.load(q)
 
         self.additional_questions = '\n\n'.join(list((f'<b>{k}</b>\n\t— {v}'
                                                      for k, v in questions.items())))
-        return self.additional_questions
