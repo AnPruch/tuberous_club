@@ -19,10 +19,8 @@ jobs:
           python-version: 3.11
       - name: Installing Dependencies
         run: |
-          export PYTHONPATH=$(pwd):$PYTHONPATH
+          ls -la venv
           python -m pip install --upgrade pip
-          python -m venv .venv
-          source .venv/bin/activate
           pip install -r requirements.txt
       - name: Code Style
         run: |          
