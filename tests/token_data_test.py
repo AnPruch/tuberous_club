@@ -11,7 +11,7 @@ class TokenTest(unittest.TestCase):
     """
     TokenTest class functionality.
     """
-    def test_fields(self):
+    def test_fields(self) -> None:
         """
         Initialization test.
         """
@@ -19,7 +19,7 @@ class TokenTest(unittest.TestCase):
         self.assertIsInstance(token.name, str)
         self.assertIsInstance(token._token, str)
 
-    def test_get_token(self):
+    def test_get_token(self) -> None:
         """
         Get_token method test.
         """
